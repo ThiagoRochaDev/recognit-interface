@@ -18,9 +18,9 @@ import GoogleDrive from '@uppy/google-drive';
 import Dropbox from '@uppy/dropbox';
 import Instagram from '@uppy/instagram';
 import { Dashboard } from '@uppy/react';
+import AwsS3 from '@uppy/aws-s3';
 
 const MyProfile = () => {
-  
   const data = useSelector(state => state.profile.data);
   const loading = useSelector(state => state.profile.loading);
   const dispatch = useDispatch();
@@ -29,27 +29,74 @@ const MyProfile = () => {
     [dispatch]
   );
 
+  // const postImage = () => {
+  //     var albumBucketName = "BUCKET_NAME";
+  //     var bucketRegion = "REGION";
+
+  //     AWS.config.update({
+  //       region: bucketRegion,
+  //       credentials: new AWS.Credentials({
+  //         accessKeyId: 'akid', secretAccessKey: 'secret',
+  //       })
+  //     });
+
+  //     var upload = new AWS.S3.ManagedUpload({
+  //       params: {
+  //         Bucket: albumBucketName,
+  //         Key: photoKey,
+  //         Body: file
+  //       }
+  //     });
+
+  //     var promise = upload.promise();
+
+  //     promise.then(
+  //       function(data) {
+  //         alert("Successfully uploaded photo.");
+  //         viewAlbum(albumName);
+  //       },
+  //       function(err) {
+  //         return alert("There was an error uploading your photo: ", err.message);
+  //       }
+  //     );
+  //   }
+
   const uppy = Uppy({
     debug: true,
     autoProceed: false,
     restrictions: {
-      maxFileSize: 10000000,
+      maxFileSize: 100000000000,
       maxNumberOfFiles: 10,
       minNumberOfFiles: 1,
       allowedFileTypes: ['image/*', 'video/*'],
     },
   });
-    uppy.use(GoogleDrive, {
-      id: 'GoogleDrive',
-      companionUrl: 'https://companion.uppy.io',
-    });
-    uppy.use(Dropbox, { companionUrl: 'https://companion.uppy.io' });
-    uppy.use(Instagram, { companionUrl: 'https://companion.uppy.io' });
-    uppy.use(Tus, {uploadUrl: '', endpoint: 'https://master.tus.io/files/' });
-    uppy.on('complete', result => {
-      console.log('successful files:', result.successful);
-      console.log('failed files:', result.failed);
-    });
+
+  uppy.use(AwsS3, {
+    // use the AwsS3 plugin
+    fields: [], // empty array
+    getUploadParameters(file) {
+      // here we prepare our request to the server for the upload URL
+      return fetch(
+        'https://04ie6y9uhl.execute-api.us-east-1.amazonaws.com/dev/client_upload',
+        {
+          // we'll send the info asynchronously via fetch to our nodejs server endpoint, '/uploader' in this case
+          method: 'POST',
+          mode: 'no-cors', // all the examples I found via the Uppy site used 'PUT' and did not work
+          headers: {
+            accept: '*/*',
+            'content-type': '*/*',
+            'x-amz-acl': 'public-read', // examples I found via the Uppy site used 'content-type': 'application/json' and did not work
+          },
+          body: file,
+        }
+      );
+    },
+  });
+  uppy.on('complete', result => {
+    console.log('successful files:', result.successful);
+    console.log('failed files:', result.failed);
+  });
 
   const [active, setActive] = useState('post');
   const [visible, setVisible] = useState(false);
@@ -70,7 +117,6 @@ const MyProfile = () => {
       setActive(type);
       setVisible(true);
     }
-    
   };
 
   const handleCancel = () => {
@@ -108,7 +154,10 @@ const MyProfile = () => {
                   className={active === 'upload_picture' ? 'active' : ''}
                   onClick={() => handleMenu('upload_picture')}
                 >
-                  <strong type="button" class="ant-btn ant-btn-primary"> Upload Pictures</strong>
+                  <strong type="button" class="ant-btn ant-btn-primary">
+                    {' '}
+                    Upload Pictures
+                  </strong>
                 </li>
                 <li
                   className={active === 'following' ? 'active' : ''}
@@ -133,8 +182,8 @@ const MyProfile = () => {
                 onCancel={handleCancel}
                 footer={null}
               >
-                {active === 'upload_picture' && 
-                <Dashboard
+                {active === 'upload_picture' && (
+                  <Dashboard
                     plugins={['GoogleDrive', 'Dropbox', 'Instagram']}
                     uppy={uppy}
                     inline={true}
@@ -153,7 +202,8 @@ const MyProfile = () => {
                       },
                     ]}
                     browserBackButtonClose={true}
-                  />}
+                  />
+                )}
                 {active === 'following' && <Following data={data.following} />}
               </Modal>
             </Container>

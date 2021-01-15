@@ -1,0 +1,93 @@
+Parameters:
+  UrlName:
+    Type: String
+  HostedZoneName:
+    Type: String
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # BucketName: ${self:provider.bucketName}
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+    # DeletionPolicy: Retain
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref "WebsiteBucket"
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Join ["", ["arn:aws:s3:::", !Ref "WebsiteBucket", /*]]
+  WebsiteCloudfront:
+    Type: AWS::CloudFront::Distribution
+    # DependsOn:
+    #   - WebsiteBucket
+    Properties:
+      DistributionConfig:
+        Comment: Cloudfront Distribution pointing to S3 bucket
+        Origins:
+          - DomainName:
+              # !Sub ${self:provider.bucketName}.s3-website-${AWS::Region}-1.amazonaws.com
+              !Select [2, !Split ["/", !GetAtt WebsiteBucket.WebsiteURL]]
+            Id: S3Origin
+            CustomOriginConfig:
+              HTTPPort: "80"
+              HTTPSPort: "443"
+              OriginProtocolPolicy: http-only
+        Enabled: true
+        HttpVersion: "http2"
+        DefaultRootObject: index.html
+        Aliases:
+          - !Ref "UrlName"
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          TargetOriginId: S3Origin
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          AcmCertificateArn: !Ref interfaceRecognitionCertificate
+          SslSupportMethod: sni-only
+  WebsiteDNSName:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub "${HostedZoneName}."
+      RecordSets:
+        - Name: !Ref UrlName
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt [WebsiteCloudfront, DomainName]
+  interfaceRecognitionCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref HostedZoneName
+      ValidationMethod: DNS
+Outputs:
+  CName:
+    Value: !Ref "UrlName"
+    Export:
+      Name: !Sub cname${AWS::StackName}
+    Description: Alternative Name for application
+  BucketName:
+    Value: !Ref "WebsiteBucket"
+    Export:
+      Name: !Sub bucket${AWS::StackName}
+    Description: S3 Bucket for application
+  CloudfrontEndpoint:
+    Value: !Ref WebsiteCloudfront
+    Export:
+      Name: !Sub cloudfront${AWS::StackName}
+    Description: Cloudfront distribution for application

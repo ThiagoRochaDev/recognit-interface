@@ -1,0 +1,36 @@
+
+language: node_js
+node_js:
+  - "12"
+cache: yarn
+jobs:
+  include:
+    - stage: build
+      script:
+        - echo 'building..!!'
+        - echo 'Installing Deps !'
+        - yarn
+        - sudo apt-get update
+        - sudo apt-get install awscli
+    - stage: deploy
+      script:
+        - export StackName=interface-recognition
+        - >
+          aws cloudformation deploy 
+          --stack-name $StackName 
+          --template-file cloudformation/interface-recognition.yml
+          --parameter-overrides 
+          UrlName=$APP_DOMAIN
+          HostedZoneName=$APP_DOMAIN
+          --no-fail-on-empty-changeset
+        - export BucketName=$(aws cloudformation describe-stacks --stack-name $StackName| jq '.Stacks | .[] | .Outputs | reduce .[] as $i ({}; .[$i.OutputKey] = $i.OutputValue)'| jq .BucketName --raw-output)
+        - export CloudfrontID=$(aws cloudformation describe-stacks --stack-name $StackName| jq '.Stacks | .[] | .Outputs | reduce .[] as $i ({}; .[$i.OutputKey] = $i.OutputValue)'| jq .CloudfrontEndpoint --raw-output)
+        - aws s3 sync build/ s3://$BucketName
+        - aws cloudfront create-invalidation --distribution-id $CloudfrontID --paths '/*'
+stages:
+  - name: build
+    # require the type to be a PR
+    if: type = push AND branch = master
+  - name: deploy
+    # require the type to be push to master
+    if: type = push AND branch = master

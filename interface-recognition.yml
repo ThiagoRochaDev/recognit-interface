@@ -68,7 +68,7 @@ Resources:
         - Name: !Ref UrlName
           Type: A
           AliasTarget:
-            HostedZoneId: Z2FDTNDATAQYW2
+            HostedZoneId: teste
             DNSName: !GetAtt [WebsiteCloudfront, DomainName]
   interfaceRecognitionCertificate:
     Type: AWS::CertificateManager::Certificate

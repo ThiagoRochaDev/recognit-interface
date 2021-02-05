@@ -7,14 +7,14 @@ const Following = ({ data }) => {
   return (
     <Wrapper>
       <h3>
-        <strong>{data.length}</strong> Following
+        <strong>{data.length}</strong> Clients
       </h3>
       <FollowingList>
         {data.length > 0 &&
           data.map(follower => (
             <ListItem key={`follower-key${follower.id}`}>
               <AvatarCard avatar={follower.avatar} name={follower.name} />
-              <Button>Abrir</Button>
+              <Button>Open</Button>
             </ListItem>
           ))}
       </FollowingList>

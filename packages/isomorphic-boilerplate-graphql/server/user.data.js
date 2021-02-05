@@ -1,7 +1,7 @@
 module.exports = {
   uid: 1,
-  name: 'Samwell Martina',
-  username: '@samwell_martina',
+  name: 'Thiago Guimarães',
+  username: '@thiago_guimaraes',
   avatar:
     'http://s3.amazonaws.com/redqteam.com/isomorphic-reloaded-image/post_12.png',
   cover_photo:

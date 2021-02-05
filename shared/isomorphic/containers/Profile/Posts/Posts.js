@@ -25,7 +25,7 @@ const galleryOptions = {
   gap: 0,
 };
 
-const Posts = ({data }) =>  {
+const Posts = ({ data }) => {
   const [currentPost, setCurrentPost] = useState(0);
   const [visible, setVisible] = useState(false);
 
@@ -34,19 +34,23 @@ const Posts = ({data }) =>  {
   useEffect(() => {
     async function getItems() {
       try {
-        const { data } = await axios.get("https://cors-anywhere.herokuapp.com/https://w8ec7719ij.execute-api.us-east-1.amazonaws.com/dev/download_client_recognized", {
-          mode: 'no-cors',
-          headers: {'Content-Type': 'application/json'}});
+        const { data } = await axios.get(
+          'https://ruvx3f1f4i.execute-api.us-east-1.amazonaws.com/dev/download_client_images/image-bucket-recognized',
+          {
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
         setItems(data);
-        console.log(data, "result  axios")
+        console.log(data, 'result  axios');
       } catch (error) {
-        console.log(error)
-        alert("Ocorreu um erro ao buscar os items");
+        console.log(error);
+        alert('Ocorreu um erro ao buscar os items');
       }
     }
     getItems();
   }, []);
-//console.log(items)
+  //console.log(items)
   const showSelectedPost = item => {
     setCurrentPost(item.position);
     setVisible(true);
@@ -75,20 +79,20 @@ const Posts = ({data }) =>  {
       newData = item;
     }
   });
-  console.log(currentPost, "currentpost modal")
+  console.log(currentPost, 'currentpost modal');
   return (
-    
     <PostsWrapper>
       {items.map(item => (
         <PostCard
-          key={item.id}
+          key={item.name}
           variant="instagram"
-          type={item.type}
-          image={item.thumb_url}
+          type="image"
+          image={item.url}
           numberOflike=""
           numberOfView=""
           numberOfcomment=""
-          onClick={() => showSelectedPost(item)}/>
+          onClick={() => showSelectedPost(item)}
+        />
       ))}
       <Modal
         wrapClassName="instagram-modal"
@@ -96,7 +100,6 @@ const Posts = ({data }) =>  {
         onCancel={handleCancel}
         footer={null}
       >
-        
         {currentPost > 1 && (
           <Button className="prev" onClick={handlePrevPost}>
             <IoIosArrowBack />
@@ -110,9 +113,7 @@ const Posts = ({data }) =>  {
 
         <ContentWrapper>
           <div className="media">
-            {newData.type === 'image' && (
-              <img src={newData.thumb_url} alt={'post'} />
-            )}
+            {<img src={newData.url} alt={'post'} />}
 
             {newData.type === 'gallery' && (
               <GlideCarousel
@@ -121,7 +122,7 @@ const Posts = ({data }) =>  {
                 prevButton={<IoIosArrowDropleftCircle />}
                 nextButton={<IoIosArrowDroprightCircle />}
                 numberOfBullets={newData.gallery.length}
-                carouselSelector={`post-gallery--${newData.id}`}
+                carouselSelector={`post-gallery--${newData.name}`}
               >
                 <Fragment>
                   {newData.gallery.map((item, index) => (
@@ -144,7 +145,7 @@ const Posts = ({data }) =>  {
           <div className="content">
             <header className="header">
               <div className="avatar-wrapper">
-                <AvatarCard  username={newData.name} />
+                <AvatarCard username={newData.name} />
                 {/* <span>•</span>
                 <Link to="/dashboard/my-profile" rel="nofollow">
                   Follow
@@ -156,9 +157,7 @@ const Posts = ({data }) =>  {
             </header>
 
             <div className="body">
-              <div className="comments">
-                
-              </div>
+              <div className="comments"></div>
             </div>
 
             <footer className="footer">
@@ -178,18 +177,13 @@ const Posts = ({data }) =>  {
               </div>
               <div className="activity-info">
                 <h5>{newData.numberOflike} likes</h5>
-                <time>AUGUST 31</time>
+                <time>loading..</time>
               </div>
             </footer>
           </div>
-        
         </ContentWrapper>
-       
       </Modal>
-    
-    
     </PostsWrapper>
-    
   );
 };
 

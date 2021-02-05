@@ -9,16 +9,10 @@ import Following from './Following/Following';
 import Wrapper, { Banner, Navigation, ContentWrapper } from './Profile.styles';
 import { useSelector, useDispatch } from 'react-redux';
 import profileActions from '@iso/redux/profile/actions';
-import axios from 'axios';
 import '@uppy/core/dist/style.css';
 import '@uppy/dashboard/dist/style.css';
-import Uppy from '@uppy/core';
-import Tus from '@uppy/tus';
-import GoogleDrive from '@uppy/google-drive';
-import Dropbox from '@uppy/dropbox';
-import Instagram from '@uppy/instagram';
 import { Dashboard } from '@uppy/react';
-import AwsS3 from '@uppy/aws-s3';
+import S3FileUpload from 'react-s3';
 
 const MyProfile = () => {
   const data = useSelector(state => state.profile.data);
@@ -29,74 +23,23 @@ const MyProfile = () => {
     [dispatch]
   );
 
-  // const postImage = () => {
-  //     var albumBucketName = "BUCKET_NAME";
-  //     var bucketRegion = "REGION";
+  const config = {
+    bucketName: 'image-bucket-uploads',
+    region: 'us-east-1',
+    accessKeyId: '',
+    secretAccessKey: '',
+    mode: 'no-cors',
+  };
 
-  //     AWS.config.update({
-  //       region: bucketRegion,
-  //       credentials: new AWS.Credentials({
-  //         accessKeyId: 'akid', secretAccessKey: 'secret',
-  //       })
-  //     });
-
-  //     var upload = new AWS.S3.ManagedUpload({
-  //       params: {
-  //         Bucket: albumBucketName,
-  //         Key: photoKey,
-  //         Body: file
-  //       }
-  //     });
-
-  //     var promise = upload.promise();
-
-  //     promise.then(
-  //       function(data) {
-  //         alert("Successfully uploaded photo.");
-  //         viewAlbum(albumName);
-  //       },
-  //       function(err) {
-  //         return alert("There was an error uploading your photo: ", err.message);
-  //       }
-  //     );
-  //   }
-
-  const uppy = Uppy({
-    debug: true,
-    autoProceed: false,
-    restrictions: {
-      maxFileSize: 100000000000,
-      maxNumberOfFiles: 10,
-      minNumberOfFiles: 1,
-      allowedFileTypes: ['image/*', 'video/*'],
-    },
-  });
-
-  uppy.use(AwsS3, {
-    // use the AwsS3 plugin
-    fields: [], // empty array
-    getUploadParameters(file) {
-      // here we prepare our request to the server for the upload URL
-      return fetch(
-        'https://04ie6y9uhl.execute-api.us-east-1.amazonaws.com/dev/client_upload',
-        {
-          // we'll send the info asynchronously via fetch to our nodejs server endpoint, '/uploader' in this case
-          method: 'POST',
-          mode: 'no-cors', // all the examples I found via the Uppy site used 'PUT' and did not work
-          headers: {
-            accept: '*/*',
-            'content-type': '*/*',
-            'x-amz-acl': 'public-read', // examples I found via the Uppy site used 'content-type': 'application/json' and did not work
-          },
-          body: file,
-        }
-      );
-    },
-  });
-  uppy.on('complete', result => {
-    console.log('successful files:', result.successful);
-    console.log('failed files:', result.failed);
-  });
+  const upload = e => {
+    S3FileUpload.uploadFile(e.target.files[0], config)
+      .then(data => {
+        console.log(data.location);
+      })
+      .catch(err => {
+        alert(err);
+      });
+  };
 
   const [active, setActive] = useState('post');
   const [visible, setVisible] = useState(false);
@@ -148,16 +91,23 @@ const MyProfile = () => {
                   className={active === 'post' ? 'active' : ''}
                   onClick={() => handleMenu('post')}
                 >
-                  <strong>{data.post.length}</strong> Gallery
+                  <strong>{data.post.length}</strong> Pictures Gallery
                 </li>
-                <li
-                  className={active === 'upload_picture' ? 'active' : ''}
-                  onClick={() => handleMenu('upload_picture')}
-                >
-                  <strong type="button" class="ant-btn ant-btn-primary">
+                <li>
+                  <label
+                    for="upload"
+                    type="file"
+                    class="ant-btn ant-btn-primary"
+                  >
                     {' '}
-                    Upload Pictures
-                  </strong>
+                    UPLOAD PICTURES
+                    <input
+                      id="upload"
+                      hidden
+                      type="file"
+                      onChange={upload}
+                    ></input>
+                  </label>
                 </li>
                 <li
                   className={active === 'following' ? 'active' : ''}

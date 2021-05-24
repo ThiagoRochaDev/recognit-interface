@@ -12,3 +12,6 @@ yarn
 npm start or yarn start
 ```
 
+
+<img src="./faceapp.gif">
+
